@@ -56,7 +56,13 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
             vad_pipeline: The voice activity detection pipeline.
             asr_pipeline: The automatic speech recognition pipeline.
         """
+        print('proces audio buffering strat')
         chunk_length_in_bytes = self.chunk_length_seconds * self.client.sampling_rate * self.client.samples_width
+        
+        print('starting process audio async?')
+        asyncio.create_task(self.process_audio_async(websocket, vad_pipeline, asr_pipeline))
+        # print('after', my_transcription)
+
         if len(self.client.buffer) > chunk_length_in_bytes:
             if self.processing_flag:
                 exit("Error in realtime processing: tried processing a new chunk while the previous one was still being processed")
@@ -65,6 +71,9 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
             self.client.buffer.clear()
             self.processing_flag = True
             # Schedule the processing in a separate task
+            print('starting process audio async?')
+            my_transcription = asr_pipeline.transcribe(self.client)
+            print('after', my_transcription)
             asyncio.create_task(self.process_audio_async(websocket, vad_pipeline, asr_pipeline))
     
     async def process_audio_async(self, websocket, vad_pipeline, asr_pipeline):
@@ -79,8 +88,12 @@ class SilenceAtEndOfChunk(BufferingStrategyInterface):
             vad_pipeline: The voice activity detection pipeline.
             asr_pipeline: The automatic speech recognition pipeline.
         """   
+        print('process audio async strat')
         start = time.time()
         vad_results = await vad_pipeline.detect_activity(self.client)
+        print('vad_results', vad_results)
+        transcription = await asr_pipeline.transcribe(self.client)
+        print('transcription', transcription)
 
         if len(vad_results) == 0:
             self.client.scratch_buffer.clear()

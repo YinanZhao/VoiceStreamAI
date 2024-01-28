@@ -110,11 +110,12 @@ language_codes = {
 
 class FasterWhisperASR(ASRInterface):
     def __init__(self, **kwargs):
-        model_size = kwargs.get('model_size', "large-v3")
+        model_size = kwargs.get('model_size', "base-v3")
         # Run on GPU with FP16
-        self.asr_pipeline = WhisperModel(model_size, device="cuda", compute_type="float16")
+        self.asr_pipeline = WhisperModel(model_size, compute_type="int8")
 
     async def transcribe(self, client):
+        print('transcribe faster_whisper')
         file_path = await save_audio_to_file(client.scratch_buffer, client.get_file_name())
 
         language = None if client.config['language'] is None else language_codes.get(client.config['language'].lower())
